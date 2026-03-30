@@ -1,0 +1,694 @@
+MyProgram.java:
+--------------
+import java.util.Scanner;
+
+public class MyProgram
+{
+	public static void main(String[] args)
+	{
+		Scanner input = new Scanner(System.in);
+		System.out.println("Welcome to my Text Adventure...");
+		System.out.println("What is your name? ");
+		String name = input.nextLine();
+		AdventureModel.startingScene();
+		Player player = new Player(name, 100);
+		AdventureModel am = new AdventureModel(player);
+		am.setupAM();
+		Room currentRoom = am.getCurrentRoom();
+		System.out.println(currentRoom.getDescription());
+		String text = "";
+		while(true)
+		{
+			System.out.print(">");
+			text = input.nextLine();
+			
+
+			//now you will use if/else if/else statements
+			//to customize what can happen if a user types a particular command
+            
+			//"move"
+			if ((text.toLowerCase().contains("move")) || (text.toLowerCase().contains("go")) )
+			{
+				//attempts to move the player
+				Room nextRoom = am.movePlayer(text);
+				
+				if(nextRoom.getRoomName().equals("Death1") || nextRoom.getRoomName().equals("Death2")) {
+				    System.out.println(nextRoom.getDescription());
+				    break;
+				}
+				
+				//this means move was successful! print new room
+				if(!currentRoom.equals(nextRoom)){
+				System.out.println(nextRoom.getDescription());
+				currentRoom = nextRoom;
+				}
+			}
+			
+			else if (text.toLowerCase().contains("pick up")) {
+			    am.pickUpItemFromRoom(text);
+			}
+			
+			else if (text.toLowerCase().contains("wear glasses") || text.toLowerCase().contains("wear bifocal glasses")) {
+			     boolean found = false;
+			     for (int i = 0; i < player.getItemCount(); i++) {
+            if (player.getInventory().get(i).getName().equals("bifocal glasses")){
+                System.out.println("Your vision suddenly feels more clear. The cloudy portals can now be clearly seen through. Your ability to use your weapons has improved.");
+                
+                for (int j = 0; j < player.getItemCount(); j++) 
+                {
+                    int num =  player.getInventory().get(j).getThrownAttackValue();
+                    num = num * 2;
+                   player.getInventory().get(j).setThrownAttackValue(num);
+                }
+                player.getInventory().remove(i);
+                found = true;
+                
+              
+            }
+			     
+			}
+                if(!found)
+                {
+                    System.out.println("You can't do that. You don't have bifocle glasses");
+                }
+			}
+			
+			else if (text.toLowerCase().contains("drop")) {
+			    am.dropItemInRoom(text);
+			}
+			else if (text.toLowerCase().contains("drink coca-cola")) {
+			    boolean found = false;
+			     for (int i = 0; i < player.getItemCount(); i++) {
+            if (player.getInventory().get(i).getName().equals("coca-cola")){
+                System.out.println("You instantly feel refreshed. You are revitalized and more motivated than ever to continue your journey!");
+                player.heal(50);
+                found = true;
+                player.getInventory().remove(i);
+               break;
+            }
+			     
+			}
+                if(!found)
+                {
+                    System.out.println("You can't do that. You don't have Coca-Cola.");
+                }
+			}
+
+			//"inventory"
+			else if (text.toLowerCase().contains("inventory"))
+			{
+				am.getPlayer().printInventory();
+			}
+			
+			else {
+			    System.out.println("***");
+			    System.out.println("I know of no such thing");
+			    System.out.println("***");
+			}
+			
+			if (currentRoom.getRoomName().equals("The Present")){
+			    System.out.println("***");
+			    System.out.println("You Win!");
+			    System.out.println("***");
+			    break;
+			}
+			
+			if (am.getCurrentRoom().getRoomName().equals("Future World") && currentRoom.hasEnemies()){
+			    int damage = 0;
+			    boolean gameOver = false;
+			    while(true) {
+                System.out.println("Would you like to fight the robot (Fight or Flight)");
+                System.out.println("***");
+                System.out.print(">");
+			    text = input.nextLine();
+                    if (text.toLowerCase().contains("fight")){
+                        for (int i = 0; i < player.getItemCount(); i++) {
+                            damage = damage + player.getInventory().get(i).getThrownAttackValue();
+                        }
+                        if (damage >= 20){
+                            System.out.println("***");
+    			            System.out.println("You killed the robot with your weapons! You now can move through the north portal!");
+    			            System.out.println("***");
+    			            am.getCurrentRoom().removeRoomEnemy("Ultron");
+    			            currentRoom.setDescription("*** \nYou are standing surrounded by towering skyscrapers. The night is illuminated by the countless neon lights and billboards plastered to every surface. Above your head cars zoom by. There appear to be holograms all around you too.\n \nTo the east you see a portal, inside looks to be mean furniture. To the south another portal hovers, and you can see people running frantically through it. To your west there is another portal. Through this one you think you can make out a dimly lit ship. To the north a final portal stands. It appears to lead back to your lab! \n***");
+    			            break;
+                        }
+                        else {
+                            System.out.println("***");
+    			            System.out.println("You dont have enough weapons. The robot is too strong. The robot killed you!");
+    			            System.out.println("***");
+    			            gameOver = true;
+    			            break;
+                        }
+                    }
+                    else if (text.toLowerCase().contains("flight")) {
+                        Room nextRoom = am.movePlayer("south");
+                        System.out.println("***");
+                        System.out.println("You have fled back to Rome");
+                        System.out.println(nextRoom.getDescription());
+    				    currentRoom = nextRoom;
+    				    break;
+                    }
+                    else {
+                        System.out.println("***");
+    			        System.out.println("You must choose fight or flight");
+    			        System.out.println("***");
+                    }
+			    }
+			    if (gameOver){
+			        break;
+			    }
+            }
+		}
+		//this is after the while loop has exited.
+		//put end of game messages here
+	}
+}
+
+Item.java:
+---------
+public class Item {
+    private String name;
+    private String color;
+    private int weight;
+    private int thrownAttackValue;
+    
+    public Item(){
+        name = "mystery";
+        color = "black";
+        weight = 0;
+        thrownAttackValue = 0;
+    }
+    public Item(String name, String color, int weight, int thrownAttackValue){
+        this.name = name;
+        this.color = color;
+        this.weight = weight;
+        this.thrownAttackValue = thrownAttackValue;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    public String getColor() {
+        return color;
+    }
+    public int getWeight() {
+        return weight;
+    }
+    public int getThrownAttackValue() {
+        return thrownAttackValue;
+    }
+    public void setName(String name){
+        this.name = name;
+    }
+    public void setColor(String color){
+        this.color = color;
+    }
+    public void setWeight(int weight){
+        this.weight = weight;
+    }
+    public void setThrownAttackValue(int thrownAttackValue){
+        this.thrownAttackValue = thrownAttackValue;
+    }
+    public boolean equals(Item other)
+    {
+        if(other.getName().equals(name) && other.getColor().equals(color) && (other.getWeight() == weight) && (other.getThrownAttackValue() == thrownAttackValue))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    public String toString(){
+        return name;
+    }
+}
+
+Player.java:
+-----------
+import java.util.ArrayList;
+
+public class Player {
+    
+    private ArrayList<Item> inventory;
+    private String playerName;
+    private int healthScore;
+    
+    public Player(String playerName, int healthScore){
+        this.playerName = playerName;
+        this.healthScore = healthScore;
+        inventory = new ArrayList<Item>();
+    }
+    
+    public ArrayList<Item> getInventory() {
+        return inventory;
+    }
+
+    //allows player to pick up an item and adds it to the inventory
+    public void pickUpItem(Item item) {
+        inventory.add(item);
+    }
+    
+    public String getName() {
+        return playerName;
+    }
+    
+    //allows player to drop an item, if that particular item is in the inventory
+    //should return null if the item is not in the inventory in the first place
+    public Item dropItem(Item item) {
+        for (int i = 0; i < inventory.size(); i++) {
+            if (inventory.get(i).equals(item)){
+                inventory.remove(i);
+                return item;
+            }
+        }
+        return null;
+    }
+    
+    
+    //counts how many items are in the inventory and returns the count
+    public int getItemCount()
+    {
+        return inventory.size();
+    }
+    
+    //calculates the total weight of all the items in the inventory and returns it
+    public double getTotalInventoryWeight() {
+        double finalWeight = 0;
+        for(int i = 0; i < inventory.size();i++)
+        {
+            finalWeight = finalWeight + ((inventory.get(i)).getWeight());
+        }
+        return finalWeight;
+    }
+    
+    //returns true if the inventory contains a similar item (for example a sword, no matter color or size), false if it does not
+    public boolean hasItem(Item item) {
+            for (int i = 0; i < inventory.size(); i++) {
+                if (inventory.get(i).getName().equals(item.getName())){
+                    return true;
+                }
+            }
+            return false;
+    }
+    
+    //returns true if the inventory contains an exact item, false if it does not
+    public boolean hasExactItem(Item item) {
+         for(int i = 0; i < inventory.size();i++)
+         {
+             if(item.equals(inventory.get(i)))
+             {
+                 return true;
+             }
+         }
+         return false;
+    }
+    
+    //prints the name of the player and print the inventory of the player with each item printed on separate lines.
+    public void printInventory() {
+        System.out.println(playerName + "'s Inventory:");
+        for (int i = 0; i < inventory.size();i++) {
+            System.out.println("-" + inventory.get(i));
+        }
+    }
+    //causes damage to player with certain amount of damage, subtracting from health
+    public void takeDamage(int damage) {
+        healthScore = healthScore - damage;
+    }
+    
+    //heals player with certain amount of health, adding to health
+    public void heal(int healthIncrease) {
+        healthScore = healthScore + healthIncrease;
+    }
+
+}
+
+Enemy.java:
+----------
+public class Enemy extends Player
+{
+	private String monsterType;
+	private String name;
+
+	//constructor for Enemy
+	public Enemy(String name, String monsterType, int healthScore){
+		/*subclass constructors ALWAYS start with this to call the superclass
+		constructor, in this case Player's constructor
+		*/
+		
+		super(name, healthScore);
+
+		//initializing the subclass unique instance variables
+		this.monsterType = monsterType;
+    }
+}
+
+Room.java:
+---------
+import java.util.ArrayList;
+
+public class Room {
+    private String[] exits;
+    private String roomName;
+    private String roomDescription;
+    private ArrayList<Item> roomItems;
+    private ArrayList<Enemy> roomEnemies;
+    
+    public Room(String northExit, String eastExit, String southExit, String westExit, String roomName, String roomDescription){
+    	exits = new String[]{northExit, eastExit, southExit, westExit};
+    	this.roomName = roomName;
+    	this.roomDescription = roomDescription;
+    	roomItems = new ArrayList<Item>();
+    	roomEnemies = new ArrayList<Enemy>();
+    }
+    
+    public void addRoomItem(Item i) {
+        roomItems.add(i);
+    }
+    
+    public void addRoomEnemy(Enemy e) {
+        roomEnemies.add(e);
+    }
+    
+    public String getDescription() {
+        return roomDescription;
+    }
+    
+    public void setDescription(String roomDescription) {
+        this.roomDescription = roomDescription;
+    }
+    
+    public Item removeRoomItem(String name) {
+        for (int i = 0; i < roomItems.size(); i++){
+            if (roomItems.get(i).getName().equals(name)) {
+                Item temp = roomItems.get(i);
+                roomItems.remove(i);
+                return temp;
+            }
+        }
+        return null;
+    }
+    
+    
+    public boolean containsItem(String name){
+        for (int i = 0; i < roomItems.size(); i++){
+            if (roomItems.get(i).getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    public ArrayList<Item> getItems() {
+        return roomItems;
+    }
+    
+    public ArrayList<Enemy> getEnemies() {
+        return roomEnemies;
+    }
+    
+    public boolean hasEnemies() {
+        return (roomEnemies.size() > 0);
+    }
+    
+    public String toString() {
+        String rs = "";
+        rs = rs + roomName + "\n" + roomDescription + "\n" + "Exits: \n" + "To the North: " + exits[0] + "\n To the East: "  + exits[1] + "\n To the West: "  + exits[3] + "\n To the South: "   + exits[2];
+        rs = rs + "\n In this room, you see: \n";
+        for (int i = 0; i < roomItems.size(); i++) {
+            rs = rs + roomItems.get(i) + "\n";
+        }
+        for (int i = 0; i < roomEnemies.size(); i++) {
+            rs = rs + roomEnemies.get(i) + "\n";
+        }
+        return rs;
+    }
+    
+    public String[] getExits()
+    {
+    	return exits;
+    }
+    
+    public String getRoomName()
+    {
+    	return roomName;
+    }
+    
+    public ArrayList<Item> getRoomItemsList()
+{
+	return roomItems;
+}
+
+public void removeRoomEnemy(String name) {
+        roomEnemies.remove(0);
+    }
+
+}
+
+AdventureModel.java:
+-------------------
+import java.util.ArrayList;
+
+public class AdventureModel {
+    private ArrayList<Room> rooms;
+    private int currentRoom;
+    private Player player;
+    
+    public AdventureModel(Player player)
+    {
+    	rooms = new ArrayList<Room>();
+    	this.player = player;
+    	this.currentRoom = 0;
+    }
+    
+    public void setupAM()
+    {
+       
+        // add in all your rooms to your list
+      /*  Room kitchen = new Room("Living Room", "None", "None", "None", "Kitchen", "The kitchen contains a small table in the middle of the room and a lone chair with a pen on the floor next to it");
+        
+        Room livingRoom = new Room("None", "None", "Kitchen", "None", "Living Room", "The living room is a total mess, paper strewn all over the floor, and a mouse runs across the room as you walk over to take a closer look at the papers.");
+        
+        rooms.add(kitchen);
+        rooms.add(livingRoom);
+        */
+        /*
+        Room cave = new Room("Cave Exit","None","None","None","The Begining","*** \nYou are in a dark and damp cave just wide enough for you. There is just enough light to see freshly drawn illustrations on the cave walls. There is a dim light coming from the north side of the cave. It does not appear that you can go any deeper into the cave. You belive that you are in the earlist age of human life. Luckily, acourding to your calculations there should be a chain of portals that connects you to your time frame. You theroize that it is possible to find your path back with enough dedication. \n***");
+        Room northCave = new Room("Rome","None","The Begining","None","Cave Exit","*** \nYou appear to be at the entrance of the cave. To the south the cave goes deeper but it is too dark to tell what is there. To the north there is a glowing, mystical portal. It looks as if it is a window to another dimension. It is large enough for you to go through. On the ground there is a \"cave stone\". \n***");
+        Room rome = new Room("Future World", "Pompeii","Ancient Egypt","Signing of the Declaration of Independence","Rome","*** \n The Roman empire has fallen. You are surrounded by chaos. Around you people are frantically running and buildings are ablaze. Near you, a \"sword\" is dropped by a soldier \n \nTo the north, you see another mystical portal hovering, but it seems to be dim and inactive. To the east you see another portal hovering, and through this one you can clearly see the glow of flames. To the south you see a portal leading to the cave. To the west you see another floating portal, and you think you can make out a crowded room. \n***"); 
+        Room declaration = new Room("Titanic","Rome","None","None","Signing of the Declaration of Independence","*** \nYou are sitting in a chamber of independence hall. In front of you, America's most famous thinkers are signing the decoration of Independence. On a table beside you lies a pair of Benjamin Franklins \"bifocal glasses\".\n \nAt the north side of the assembly room, against the wall there is another portal, but it is too dark to see anything clearly though it. To the east side of the room, another portal is hovering.Through it you can see ruins and frantic people. \n***");
+        Room pompeii = new Room("60's Diner","Death2","None","Rome","Pompeii","*** \nYou stand in the center of a city square, surrounded by intricate architecture. The sky is blackened with smoke and soot, and people are running around frantically. The sky is raining fire! In front of you, a man dropped his \"bow and arrows\" \n \nTo the north there is a floating portal, and through it you can see brightly colored furniture. To the west there is another portal floating containing ruins and running people. \n***");
+        Room titanic = new Room("None","Future World","Signing of the Declaration of Independence","Death1","Titanic","*** \nYou are standing on the deck of the great Titanic. The deck is angled and you have to hold on to the railing in order to not slide away. The ship is beging to sink under the water and everyone around you is frantic.\n \nOn the eastern side of the deck a portal is hovering. Through it you can make out a neon glow. To the south there is another floating portal. There appear to be many people in a crowded room in this dimension. \n***");
+        Room diner = new Room("None","None","Pompeii","Future World","60's Diner","*** \nYou are sitting at a diner both. The floors are checkered and the furniture is brightly colored. On the TV you see incredible footage of the moonlanding playing. On the table in front of you sits an Ice cold bottle of \"Coca-Cola\".\n \nAt the south end of the diner, there is a portal hovering and through it you can see the glow of fire. On the eastern wall of the diner, another portal floats. You can see the neon lights of what looks like a city. \n***");
+        Room future = new Room("The Present","60's Diner","Rome","Titanic","Future World","*** \nYou are standing surrounded by towering skyscrapers. The night is illuminated by the countless neon lights and billboards plastered to every surface. Above your head cars zoom by. There appear to be holograms all around you too.\n \nTo the east you see a portal, inside looks to be mean furniture. To the south another portal hovers, and you can see people running frantically through it. To your west there is another portal. Through this one you think you can make out a dimly lit ship. To the north a final portal stands. It appears to lead back to your lab! However, the cyber robot is standing in the way. \n***");
+        Room egypt = new Room("Rome","None","None","None","Ancient Egypt","*** \nYou are standing in an elaborate sandstone room. Through the large window you can see the bustling Ancient Egyptian city. In the distance you see towering pyramids. In front of you is an \"ankh\". \n***");
+        Room present = new Room("None","None","Future World","None","The Present","*** \nYou made it! You're back in your lab. You see the scorched time machine that sent you upon this journey, but that is no matter. You have completed the adventure of a lifetime and made it back. Congrats! \n***");
+        Room death1 = new Room("None","None","None","None","Death1","*** \nThere is no portal this way! As you try to go Westward on the deck, you are shaken off balence by the tilted ship. You fall twards the outer railing and are unable to prevent yourself from tumbling over. You plunge into the frigid ocean water. Hypothermia quickly consumes you. YOU DIE! \n***");
+        Room death2 = new Room("None","None","None","None","Death2","*** \nThere is no portal this way! You move through the chaos of the city eastward. Suddenly a large flaming stone of molten rock salls from the sky and strikes you. YOU DIE! \n***");
+        */
+        
+    //spelling errors fixed
+    Room cave = new Room("Cave Exit","None","None","None","The Beginning","*** \nYou are in a dark and damp cave just wide enough for you. There is just enough light to see freshly drawn illustrations on the cave walls. There is a dim light coming from the north side of the cave. It does not appear that you can go any deeper into the cave. You believe that you are in the earliest age of human life. Luckily, according to your calculations, there should be a chain of portals that connects you to your time frame. You theorize that it is possible to find your path back with enough dedication. \n***");
+    Room northCave = new Room("Rome","None","The Beginning","None","Cave Exit","*** \nYou appear to be at the entrance of the cave. To the south the cave goes deeper, but it is too dark to tell what is there. To the north there is a glowing, mystical portal. It looks as if it is a window to another dimension. It is large enough for you to go through. On the ground there is a \"cave stone\". \n***");
+    Room rome = new Room("Future World","Pompeii","Ancient Egypt","Signing of the Declaration of Independence","Rome","*** \nThe Roman Empire has fallen. You are surrounded by chaos. Around you people are frantically running and buildings are ablaze. Near you, a \"sword\" is dropped by a soldier.\n\nTo the north, you see another mystical portal hovering, but it seems to be dim and inactive. To the east you see another portal hovering, and through this one you can clearly see the glow of flames. To the south you see a portal leading to the cave. To the west you see another floating portal, and you think you can make out a crowded room. \n***");
+    Room declaration = new Room("Titanic","Rome","None","None","Signing of the Declaration of Independence","*** \nYou are sitting in a chamber of Independence Hall. In front of you, America's most famous thinkers are signing the Declaration of Independence. On a table beside you lies a pair of Benjamin Franklin's \"bifocal glasses\".\n\nAt the north side of the assembly room, against the wall, there is another portal, but it is too dark to see anything clearly through it. To the east side of the room, another portal is hovering. Through it you can see ruins and frantic people. \n***");
+    Room pompeii = new Room("60's Diner","Death2","None","Rome","Pompeii","*** \nYou stand in the center of a city square, surrounded by intricate architecture. The sky is blackened with smoke and soot, and people are running around frantically. The sky is raining fire! In front of you, a man dropped his \"bow and arrows\".\n\nTo the north there is a floating portal, and through it you can see brightly colored furniture. To the west there is another portal floating, containing ruins and running people. \n***");
+    Room titanic = new Room("None","Future World","Signing of the Declaration of Independence","Death1","Titanic","*** \nYou are standing on the deck of the great Titanic. The deck is angled and you have to hold on to the railing in order to not slide away. The ship is beginning to sink under the water and everyone around you is frantic.\n\nOn the eastern side of the deck a portal is hovering. Through it you can make out a neon glow. To the south there is another floating portal. There appear to be many people in a crowded room in this dimension. \n***");
+    Room diner = new Room("None","None","Pompeii","Future World","60's Diner","*** \nYou are sitting at a diner booth. The floors are checkered and the furniture is brightly colored. On the TV you see incredible footage of the moon landing playing. On the table in front of you sits an ice-cold bottle of \"Coca-Cola\".\n\nAt the south end of the diner, there is a portal hovering and through it you can see the glow of fire. On the eastern wall of the diner, another portal floats. You can see the neon lights of what looks like a city. \n***");
+    Room future = new Room("The Present","60's Diner","Rome","Titanic","Future World","*** \nYou are standing surrounded by towering skyscrapers. The night is illuminated by the countless neon lights and billboards plastered to every surface. Above your head, cars zoom by. There appear to be holograms all around you too.\n\nTo the east you see a portal; inside looks to be modern furniture. To the south another portal hovers, and you can see people running frantically through it. To your west there is another portal. Through this one you think you can make out a dimly lit ship. To the north a final portal stands. It appears to lead back to your lab! However, the cyber robot is standing in the way. \n***");
+    Room egypt = new Room("Rome","None","None","None","Ancient Egypt","***\n**Secret Passage**\n You are standing in an elaborate sandstone room. Through the large window you can see the bustling Ancient Egyptian city. In the distance you see towering pyramids. In front of you is an \"ankh\". \n***");
+    Room present = new Room("None","None","Future World","None","The Present","***\n You made it! You're back in your lab. You see the scorched time machine that sent you upon this journey, but that is no matter. You have completed the adventure of a lifetime and made it back. Congrats! \n***");
+    Room death1 = new Room("None","None","None","None","Death1","*** \nThere is no portal this way! As you try to go westward on the deck, you are shaken off balance by the tilted ship. You fall toward the outer railing and are unable to prevent yourself from tumbling over. You plunge into the frigid ocean water. Hypothermia quickly consumes you. YOU DIE! \n***");
+    Room death2 = new Room("None","None","None","None","Death2","*** \nThere is no portal this way! You move through the chaos of the city eastward. Suddenly a large flaming stone of molten rock falls from the sky and strikes you. YOU DIE! \n***");
+       
+        rooms.add(cave);
+        rooms.add(northCave);
+        rooms.add(rome);
+        rooms.add(declaration);
+        rooms.add(pompeii);
+        rooms.add(future);
+        rooms.add(titanic);
+        rooms.add(egypt);
+        rooms.add(diner);
+        rooms.add(present);
+        rooms.add(death1);
+        rooms.add(death2);
+
+        //create all your items and make sure to add them to the right room
+    
+        Item ankh = new Item("ankh","gold",3,3);
+        Item sword = new Item("sword","white",7,10);
+        Item bow = new Item("bow and arrows","brown",4,9);
+        Item coke = new Item("coca-cola","red",2,1);
+        Item glasses = new Item("bifocal glasses","black",1,0);
+        Item stone = new Item("cave stone","grey",10,4);
+        
+        northCave.addRoomItem(stone);
+        rome.addRoomItem(sword);
+        pompeii.addRoomItem(bow);
+        diner.addRoomItem(coke);
+        declaration.addRoomItem(glasses);
+        egypt.addRoomItem(ankh);
+        
+        Enemy robot = new Enemy("Ultron","Cyber Robot",20);
+        future.addRoomEnemy(robot);
+        
+        //create all your enemies and decide which room they will be in
+        
+        
+        //set your currentRoom integer to the index of the room in your arraylist you want
+        //the player to start at
+        currentRoom = 0;
+    }
+    
+    public Room getCurrentRoom() {
+        return rooms.get(currentRoom);
+    }
+    
+    public Player getPlayer() {
+        return player;
+    }
+    
+    public Room movePlayer(String instruction)
+    {
+    	String possibleExit = "None";
+    	String[] exitNames = getCurrentRoom().getExits();
+    
+    	//instruction will be a lower case string
+        if (instruction.contains("north"))
+        {
+        	possibleExit = exitNames[0];
+        }
+    	else if (instruction.contains("east"))
+    	{
+    		possibleExit = exitNames[1];
+    	}
+    	else if (instruction.contains("south"))
+    	{
+    		possibleExit = exitNames[2];
+    	}
+    	else if (instruction.contains("west"))
+    	{
+    		possibleExit = exitNames[3];
+    	}
+    	else {
+    	    System.out.println("***");
+    	    System.out.println("Please move in a cardinal direction");
+    	    System.out.println("***");
+    	    return getCurrentRoom();
+    	}
+    	Item ankh = new Item("ankh","gold",3,3);
+    	if (currentRoom == 2 && !player.hasItem(ankh) && instruction.contains("north")){
+    	    System.out.println("***");
+    	    System.out.println("You need an anchient key to cross the north portal");
+    	    System.out.println("***");
+    		return getCurrentRoom();
+    	}
+    	
+    	if (currentRoom == 5 && getCurrentRoom().hasEnemies()  && instruction.contains("north")){
+    	    System.out.println("***");
+    	    System.out.println("You must kill the robot to go north");
+    	    System.out.println("***");
+    		return getCurrentRoom();
+    	}
+    	
+    	if (possibleExit.equals("None"))
+    	{
+    	    System.out.println("***");
+    	    System.out.println("There is no path this way. Try another direction.");
+    	    System.out.println("***");
+    		return getCurrentRoom();
+    
+    	}
+    	else{
+    		//find room you want to go to in room list
+    		for (int i = 0; i < rooms.size(); i++)
+    		{
+    			if (rooms.get(i).getRoomName().equals(possibleExit))
+    			{
+    				//set currentRoom to that room
+    				currentRoom = i;
+    				return getCurrentRoom();
+    			}
+    		}
+    		return getCurrentRoom();
+	    }
+		
+    }
+
+    
+    public void pickUpItemFromRoom(String instruction) {
+        Item thing = null;
+        boolean command = instruction.contains("pick up");
+        String item = instruction.substring(8).strip().toLowerCase();
+        
+        boolean itemInRoom = getCurrentRoom().containsItem(item);
+        for (int i = 0; i < getCurrentRoom().getItems().size(); i++) {
+            if (getCurrentRoom().getItems().get(i).getName().equals(item)) {
+                thing = getCurrentRoom().getItems().get(i);
+                break;
+            }
+        }
+        if (thing == null) {
+            System.out.println("***");
+            System.out.println("You can't pick that up");
+            System.out.println("***");
+            return;
+        }
+        if (itemInRoom && command) {
+            player.pickUpItem(thing);
+            getCurrentRoom().removeRoomItem(item);
+            System.out.println("***");
+            System.out.println(item + " has been picked up");
+            System.out.println("***");
+        }
+        
+    }
+    
+    public void dropItemInRoom(String instruction) {
+        Item thing = null;
+        boolean command = instruction.contains("drop");
+        String item = instruction.substring(5).toLowerCase();;
+        for (int i = 0; i < player.getInventory().size(); i++) {
+            if (player.getInventory().get(i).getName().equals(item)) {
+                thing = player.getInventory().get(i);
+                break;
+            }
+        }
+        if (thing == null) {
+            System.out.println("***");
+            System.out.println("You don't have that item.");
+            System.out.println("***");
+            return;
+        }
+        boolean itemInInventory = player.hasItem(thing);
+        if (itemInInventory && command) {
+            player.dropItem(thing);
+            getCurrentRoom().addRoomItem(thing);
+            System.out.println("***");
+            System.out.println(item + " has been dropped");
+            System.out.println("***");
+        }
+    }
+    
+    public String toString() {
+        return "My Text Adventure: Journey Through Time";
+    }
+    
+    public void printRooms() {
+        for (int i = 0; i < rooms.size(); i++) {
+            System.out.println(rooms.get(i));
+        }
+    }
+    
+    public static void startingScene()
+    {
+        System.out.println(" ");
+        System.out.println("You are one of the worlds leading scientists. It has been your lifes work to create a working time machine that allows you to visit the past and future. Today is the day you decided your machine was finally ready for testing. ");
+        System.out.println("You are in your lab, and you power up the machine. You step inside, and set the target date for just one day ago as this is only your first test. You activate it, expecting the usally buzz. But instead, BOOM... ");
+    }
+    
+}
+
